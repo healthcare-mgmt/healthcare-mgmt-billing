@@ -2,13 +2,9 @@
 title: Billing Service – Architecture & ER Diagrams
 ---
 
-<div class="page-wrapper">
-
 # Billing Service – Architecture & ER Diagrams
 
 This page documents the high-level architecture and the billing domain model.
-
-</div>
 
 <!-- Load Mermaid for GitHub Pages -->
 <script src="https://unpkg.com/mermaid@10.9.0/dist/mermaid.min.js"></script>
@@ -20,26 +16,18 @@ This page documents the high-level architecture and the billing domain model.
 </script>
 
 <style>
-  .page-wrapper {
-    max-width: 1000px;
-    margin: 40px auto;
-    padding: 0 16px 40px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    line-height: 1.5;
-  }
-  .page-wrapper h1, .page-wrapper h2 {
-    font-weight: 600;
-  }
   .diagram-block {
     max-width: 1000px;
-    margin: 0 auto 48px;
+    margin: 32px auto;
     padding: 16px;
     background: #f9fafb;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
   .diagram-block h2 {
     margin-top: 0;
+    font-weight: 600;
   }
 </style>
 
@@ -47,35 +35,27 @@ This page documents the high-level architecture and the billing domain model.
 <h2>Architecture Diagram</h2>
 
 <div class="mermaid">
-flowchart LR
-  user[Client Application]
+graph LR
+  Client[Client]
+  Ingress[Ingress Controller]
+  Svc[Billing Service (K8s Service)]
+  Pod[Billing Service Pod]
+  Controller[REST Controller]
+  ServiceLayer[Service Layer]
+  Repo[JPA Repositories]
+  Rabbit[RabbitMQ]
+  Queue[invoice.events queue]
+  DB[(Billing Database)]
 
-  subgraph k8s[Kubernetes Cluster]
-    ingress[Ingress Controller]
-    svc[Billing Service (Service)]
-
-    subgraph pod[Billing Service Pod]
-      controller[REST Controller]
-      service[Billing Service]
-      repo[JPA Repositories]
-    end
-
-    subgraph rabbit[RabbitMQ]
-      queue[invoice.events queue]
-    end
-
-    db[(Billing Database)]
-  end
-
-  user -->|HTTPS| ingress
-  ingress --> svc
-  svc --> controller
-  controller --> service
-  service --> repo
-  repo --> db
-
-  service -->|publish events| queue
-  queue -->|async consumers| pod
+  Client --> Ingress
+  Ingress --> Svc
+  Svc --> Pod
+  Pod --> Controller
+  Controller --> ServiceLayer
+  ServiceLayer --> Repo
+  Repo --> DB
+  ServiceLayer --> Rabbit
+  Rabbit --> Queue
 </div>
 </div>
 
