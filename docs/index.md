@@ -1,62 +1,53 @@
 ---
+
 ---
+
 # Billing Service – Architecture & ER Diagrams
 
-Welcome to the documentation for the **Billing Service**.  
-This page shows two critical views of the system:
-
-1. **Overall Service Architecture** (Spring Boot + RabbitMQ + Kubernetes + DB)  
-2. **Entity Relationship Diagram (ERD)** for the billing domain
-
 ---
 
-# 🚀 Architecture Diagram
+# Architecture Diagram
 
 ```mermaid
-flowchart LR
+graph LR
 
-  subgraph User["Client / Frontend"]
-    UI["Web UI / Mobile App"]
-  end
+    User[Client]
 
-  subgraph K8s["Kubernetes Cluster"]
-    
-    subgraph BillingPod["Billing Service Pod"]
-      Controller["Spring Boot<br/>REST Controller"]
-      Service["Service Layer"]
-      Repo["JPA Repository<br/>Layer"]
+    subgraph K8s["Kubernetes Cluster"]
+        Ingress["Ingress Controller"]
+        SVC["Billing Service (ClusterIP)"]
+
+        subgraph BillingPod["Billing Service Pod"]
+            Ctrl["REST Controller"]
+            SvcLayer["Service Layer"]
+            Repo["JPA Repository"]
+        end
+
+        subgraph Rabbit["RabbitMQ Cluster"]
+            Queue["invoice.events Queue"]
+        end
+
+        DB[(Database)]
     end
 
-    subgraph RabbitMQ["RabbitMQ Cluster / Pod"]
-      Queue["invoice.events Queue"]
-    end
+    User --> Ingress
+    Ingress --> SVC
+    SVC --> Ctrl
+    Ctrl --> SvcLayer
+    SvcLayer --> Repo
+    Repo --> DB
 
-    DB[(PostgreSQL / MySQL Database)]
-
-    Ingress["Ingress Controller"]
-    Svc["Billing Service - ClusterIP Service"]
-
-  end
-
-  %% Connections
-  UI -->|"HTTPS"| Ingress
-  Ingress -->|"Routes to"| Svc
-  Svc -->|"Forwards to"| Controller
-
-  Controller --> Service
-  Service --> Repo
-  Repo --> DB
-
-  Service -->|"Publish events"| Queue
-  Queue -->|"Async consumers"| BillingPod
+    SvcLayer --> Queue
+    Queue --> BillingPod
 ```
 
 ---
 
-# 📘 Entity Relationship Diagram (ERD)
+# Entity Relationship Diagram (ERD)
 
 ```mermaid
 erDiagram
+
   INVOICE {
     bigint id PK
     string patient_reference
@@ -87,13 +78,8 @@ erDiagram
     datetime created_at
   }
 
-  INVOICE ||--o{ INVOICE_LINE_ITEM : "has line items"
-  INVOICE ||--o{ PAYMENT : "has payments"
+  INVOICE ||--o{ INVOICE_LINE_ITEM : has_line_items
+  INVOICE ||--o{ PAYMENT : has_payments
 ```
 
 ---
-
-## ✅ Notes
-
-- This documentation is generated for GitHub Pages and fully supports Mermaid diagrams.
-- Update this page anytime your architecture or domain entities change.
