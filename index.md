@@ -37,21 +37,24 @@ This page documents the high-level architecture and the billing domain model.
 <div class="mermaid">
 graph LR
   Client[Client]
-  Ingress[Ingress]
-  ServiceSvc[Billing Service]
-  Pod[Billing Pod]
+  Ingress[Ingress Controller]
+  ServiceSvc[Billing Service (K8s Service)]
+  Pod[Billing Service Pod]
   Controller[REST Controller]
   ServiceLayer[Service Layer]
   Repo[JPA Repositories]
+  Redis[(Redis Cache)]
   Rabbit[RabbitMQ]
   Queue[invoice_events_queue]
-  DB[Billing Database]
+  DB[(Billing Database)]
+
   Client --> Ingress
   Ingress --> ServiceSvc
   ServiceSvc --> Pod
   Pod --> Controller
   Controller --> ServiceLayer
   ServiceLayer --> Repo
+  ServiceLayer --> Redis
   Repo --> DB
   ServiceLayer --> Rabbit
   Rabbit --> Queue
